@@ -3,16 +3,12 @@
 VDL is a desktop GUI for [yt-dlp](https://github.com/yt-dlp/yt-dlp). This fork is based on [engatec/vdl](https://github.com/engatec/vdl) and adds downloading video fragments without re-encoding. A portable Windows build is published in [Releases](https://github.com/SerzhMelhior/vdl-1.10.0/releases/latest).
 
 Download videos from YouTube and other sites supported by yt-dlp.
-![Search](https://user-images.githubusercontent.com/6572208/149672268-6558d127-264a-4a14-a0ea-3b080ce78eba.png)
 
 Choose any format reported by yt-dlp.
-![Formats](https://user-images.githubusercontent.com/6572208/149672269-5b2a8935-1d91-4d1d-ae62-82849ad8d146.png)
 
 Download multiple files at once.
-![Queue](https://user-images.githubusercontent.com/6572208/149672270-c622b56f-efb4-4e93-aa48-e4d3cc575844.png)
 
 Subscribe to channels and playlists.
-![Subscriptions](https://user-images.githubusercontent.com/6572208/149672271-1fc12a0c-7aff-452b-b0f2-85ea5dd84d0e.png)
 
 ## What's new in 1.10.0
 
