@@ -8,7 +8,9 @@ import javafx.concurrent.Service;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonBar;
 import javafx.scene.control.ButtonType;
+import javafx.scene.control.TextArea;
 import javafx.stage.Stage;
+import org.apache.commons.lang3.StringUtils;
 
 public class Dialogs {
 
@@ -31,7 +33,21 @@ public class Dialogs {
         var alert = new Alert(Alert.AlertType.ERROR);
         alert.setTitle(ctx.getLocalizedString("error"));
         alert.setHeaderText(ctx.getLocalizedString(key));
-        alert.setContentText(msg);
+
+        // A plain Alert grows with its content, so a long diagnostic message (for example a full
+        // yt-dlp/ffmpeg log) can push the buttons outside of the screen and make the dialog impossible
+        // to close. Use a scrollable text area with a bounded size instead.
+        TextArea details = new TextArea(StringUtils.defaultString(msg));
+        details.setEditable(false);
+        details.setWrapText(true);
+        details.setPrefColumnCount(80);
+        details.setPrefRowCount(18);
+        details.setMaxWidth(Double.MAX_VALUE);
+        details.setMaxHeight(Double.MAX_VALUE);
+
+        alert.getDialogPane().setContent(details);
+        alert.getDialogPane().setPrefWidth(700);
+        alert.setResizable(true);
         alert.showAndWait();
     }
 

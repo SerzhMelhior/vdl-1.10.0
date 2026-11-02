@@ -36,6 +36,7 @@ public class DownloadProcessBuilder implements YoutubeDlProcessBuilder {
         YoutubeDlCommandHelper.setDownloadOptions(commandBuilder);
         YoutubeDlCommandHelper.setNetworkOptions(commandBuilder);
         YoutubeDlCommandHelper.setAuthenticationOptions(commandBuilder);
+        YoutubeDlCommandHelper.setVideoSectionOptions(commandBuilder, downloadable);
 
         for (Postprocessing pp : downloadable.getPostprocessingSteps()) {
             commandBuilder.addAll(pp.getCommandList());

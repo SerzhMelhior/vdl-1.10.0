@@ -86,6 +86,26 @@ public class QueueItem implements Downloadable {
         downloadable.setDownloadPath(downloadPath);
     }
 
+    @Override
+    public Double getSectionStartSeconds() {
+        return downloadable.getSectionStartSeconds();
+    }
+
+    @Override
+    public void setSectionStartSeconds(Double sectionStartSeconds) {
+        downloadable.setSectionStartSeconds(sectionStartSeconds);
+    }
+
+    @Override
+    public Double getSectionEndSeconds() {
+        return downloadable.getSectionEndSeconds();
+    }
+
+    @Override
+    public void setSectionEndSeconds(Double sectionEndSeconds) {
+        downloadable.setSectionEndSeconds(sectionEndSeconds);
+    }
+
     public String getSize() {
         return size.get();
     }

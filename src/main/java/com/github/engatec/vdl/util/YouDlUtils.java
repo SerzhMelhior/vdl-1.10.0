@@ -100,6 +100,29 @@ public class YouDlUtils {
         return downloadId + outputTemplate;
     }
 
+    /**
+     * Adds a video section suffix to the output template right before the extension placeholder,
+     * so that only fragment file names are changed.
+     */
+    public static String updateOutputTemplateWithVideoSection(String outputTemplate, Downloadable downloadable) {
+        if (!downloadable.hasVideoSection()) {
+            return outputTemplate;
+        }
+
+        String suffix = downloadable.getVideoSection().toFilenameSuffix();
+        int extensionIndex = outputTemplate.lastIndexOf("%(ext)s");
+        if (extensionIndex < 0) {
+            return outputTemplate + " " + suffix;
+        }
+
+        int extensionDotIndex = outputTemplate.lastIndexOf('.', extensionIndex - 1);
+        if (extensionDotIndex < 0) {
+            return outputTemplate.substring(0, extensionIndex) + " " + suffix + outputTemplate.substring(extensionIndex);
+        }
+
+        return outputTemplate.substring(0, extensionDotIndex) + " " + suffix + outputTemplate.substring(extensionDotIndex);
+    }
+
     private static String generateDownloadId() {
         LocalDate today = LocalDate.now();
         String day = StringUtils.leftPad(String.valueOf(today.getDayOfMonth()), 2, '0');

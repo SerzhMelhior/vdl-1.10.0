@@ -291,16 +291,35 @@ public class SearchComponentController extends VBox implements ComponentControll
     }
 
     private void handleDownloadButtonClick(ActionEvent e) {
+        List<DownloadableItemComponentController> selectedItems = getSelectedItems();
+        String sectionError = selectedItems.stream()
+                .map(DownloadableItemComponentController::validateSection)
+                .filter(Objects::nonNull)
+                .findFirst()
+                .orElse(null);
+        if (sectionError != null) {
+            Dialogs.exception("download.section.invalid", sectionError);
+            e.consume();
+            return;
+        }
+
         AppUtils.resolveDownloadPath(stage).ifPresent(path -> {
-            getSelectedItems().forEach(it -> it.download(path));
+            selectedItems.forEach(it -> it.download(path));
             contentStateProperty.set(ContentState.EMPTY);
         });
         e.consume();
     }
 
     private void handleDownloadAudioButtonClick(ActionEvent e) {
+        List<DownloadableItemComponentController> selectedItems = getSelectedItems();
+        if (selectedItems.stream().anyMatch(DownloadableItemComponentController::isSectionSelected)) {
+            Dialogs.error("download.section.audio.unsupported");
+            e.consume();
+            return;
+        }
+
         AppUtils.resolveDownloadPath(stage).ifPresent(path -> {
-            getSelectedItems().forEach(it -> it.downloadAudio(path));
+            selectedItems.forEach(it -> it.downloadAudio(path));
             contentStateProperty.set(ContentState.EMPTY);
         });
         e.consume();

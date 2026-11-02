@@ -81,6 +81,37 @@ public class QueueMapperTest {
     }
 
     @Test
+    void fetchQueueItems_shouldRestoreVideoSection() {
+        QueueItem sectionItem = createQueueItem();
+        sectionItem.setSectionStartSeconds(300D);
+        sectionItem.setSectionEndSeconds(600.5D);
+
+        QueueItem fullItem = createQueueItem();
+
+        dbManager.doQuery(QueueMapper.class, mapper -> mapper.insertQueueItems(List.of(sectionItem)));
+        dbManager.doQuery(QueueMapper.class, mapper -> mapper.insertQueueItems(List.of(fullItem)));
+
+        List<QueueItem> dbItems = dbManager.doQuery(QueueMapper.class, QueueMapper::fetchQueueItems);
+        assertThat(dbItems)
+                .filteredOn(it -> it.getId().equals(sectionItem.getId()))
+                .singleElement()
+                .satisfies(it -> {
+                    assertThat(it.getSectionStartSeconds()).isEqualTo(300D);
+                    assertThat(it.getSectionEndSeconds()).isEqualTo(600.5D);
+                    assertThat(it.hasVideoSection()).isTrue();
+                });
+
+        assertThat(dbItems)
+                .filteredOn(it -> it.getId().equals(fullItem.getId()))
+                .singleElement()
+                .satisfies(it -> {
+                    assertThat(it.getSectionStartSeconds()).isNull();
+                    assertThat(it.getSectionEndSeconds()).isNull();
+                    assertThat(it.hasVideoSection()).isFalse();
+                });
+    }
+
+    @Test
     void deleteQueueItems_shouldDeleteQueueItemAndTempFilesInfo() {
         QueueItem it1 = createQueueItem();
         dbManager.doQuery(QueueMapper.class, mapper -> {

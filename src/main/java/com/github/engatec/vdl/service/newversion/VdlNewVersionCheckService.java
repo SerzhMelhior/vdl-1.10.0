@@ -15,7 +15,7 @@ public class VdlNewVersionCheckService extends Service<Optional<ReleaseDto>> {
         return new Task<>() {
             @Override
             protected Optional<ReleaseDto> call() {
-                ReleaseDto releaseInfo = GithubUtils.getLatestReleaseInfo("engatec", "vdl");
+                ReleaseDto releaseInfo = GithubUtils.getLatestReleaseInfo("SerzhMelhior", "vdl-1.10.0");
                 String latestVersion = releaseInfo.tagName();
                 String currentVersion = ApplicationContext.getInstance().getAppVersion();
                 return new NewVersionPredicate().test(latestVersion, currentVersion) ? Optional.of(releaseInfo) : Optional.empty();

@@ -1,5 +1,6 @@
 package com.github.engatec.vdl.util;
 
+import java.util.Locale;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -12,6 +13,7 @@ public class LabelUtils {
     private static final String N_A = "N/A";
     private static final String QUESTION_MARK = "?";
     private static final String AUDIO_LABEL_DELIMITER = " / ";
+    private static final String[] IEC_SIZE_UNITS = {"B", "KiB", "MiB", "GiB", "TiB", "PiB"};
 
     public static String formatResolution(Integer width, Integer height) {
         String w = width == null ? QUESTION_MARK : width.toString();
@@ -25,6 +27,24 @@ public class LabelUtils {
 
     public static String formatSize(Long filesize, String defaultValue) {
         return filesize == null || filesize == 0 ? defaultValue : FileUtils.byteCountToDisplaySize(filesize);
+    }
+
+    /**
+     * Formats a byte count using binary units, e.g. {@code 25.19MiB}.
+     */
+    public static String formatIecSize(long bytes) {
+        if (bytes < 1024) {
+            return bytes + IEC_SIZE_UNITS[0];
+        }
+
+        double value = bytes;
+        int unitIndex = 0;
+        while (value >= 1024 && unitIndex < IEC_SIZE_UNITS.length - 1) {
+            value /= 1024;
+            unitIndex++;
+        }
+
+        return String.format(Locale.ROOT, "%.2f%s", value, IEC_SIZE_UNITS[unitIndex]);
     }
 
     public static String formatCodec(String codec) {

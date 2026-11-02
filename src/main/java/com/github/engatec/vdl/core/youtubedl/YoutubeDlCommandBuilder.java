@@ -123,6 +123,20 @@ public class YoutubeDlCommandBuilder {
         return this;
     }
 
+    public YoutubeDlCommandBuilder downloadSections(String sectionRange) {
+        if (StringUtils.isBlank(sectionRange)) {
+            throw new IllegalArgumentException("sectionRange must not be blank");
+        }
+        commandList.add("--download-sections");
+        commandList.add(sectionRange);
+        return this;
+    }
+
+    public YoutubeDlCommandBuilder noForceKeyframesAtCuts() {
+        commandList.add("--no-force-keyframes-at-cuts");
+        return this;
+    }
+
     /* Subtitles Options */
     public YoutubeDlCommandBuilder writeSub(Set<String> languages) {
         commandList.add("--write-sub");

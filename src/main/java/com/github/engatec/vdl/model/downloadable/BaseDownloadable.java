@@ -12,6 +12,8 @@ public class BaseDownloadable implements Downloadable {
     protected String title;
     protected String baseUrl;
     protected Path downloadPath;
+    protected Double sectionStartSeconds;
+    protected Double sectionEndSeconds;
 
     protected List<Postprocessing> postprocessingSteps;
 
@@ -56,6 +58,26 @@ public class BaseDownloadable implements Downloadable {
     @Override
     public void setDownloadPath(Path downloadPath) {
         this.downloadPath = downloadPath;
+    }
+
+    @Override
+    public Double getSectionStartSeconds() {
+        return sectionStartSeconds;
+    }
+
+    @Override
+    public void setSectionStartSeconds(Double sectionStartSeconds) {
+        this.sectionStartSeconds = sectionStartSeconds;
+    }
+
+    @Override
+    public Double getSectionEndSeconds() {
+        return sectionEndSeconds;
+    }
+
+    @Override
+    public void setSectionEndSeconds(Double sectionEndSeconds) {
+        this.sectionEndSeconds = sectionEndSeconds;
     }
 
     @Override

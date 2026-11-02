@@ -11,11 +11,19 @@ import java.util.stream.Stream;
 import com.github.engatec.vdl.core.ApplicationContext;
 import com.github.engatec.vdl.core.youtubedl.YoutubeDlCommandBuilder;
 import com.github.engatec.vdl.core.youtubedl.YoutubeDlCommandHelper;
+import com.github.engatec.vdl.exception.VideoSectionUnsupportedException;
 import com.github.engatec.vdl.model.downloadable.Downloadable;
 import com.github.engatec.vdl.preference.property.engine.ConfigFilePathConfigProperty;
 import org.apache.commons.lang3.StringUtils;
 
 public class DownloadWithConfigFileProcessBuilder implements YoutubeDlProcessBuilder {
+
+    private static final List<String> SECTION_CONFLICTING_OPTIONS = List.of(
+            "--download-sections",
+            "--force-keyframes-at-cuts",
+            "--recode-video",
+            "--merge-output-format"
+    );
 
     private final Downloadable downloadable;
 
@@ -31,25 +39,49 @@ public class DownloadWithConfigFileProcessBuilder implements YoutubeDlProcessBui
 
         YoutubeDlCommandBuilder commandBuilder = YoutubeDlCommandBuilder.newInstance().configLocation(configLocation);
 
-        String configFile = StringUtils.EMPTY;
-        try (Stream<String> lines = Files.lines(Path.of(configLocation))) {
-            configFile = lines.map(it -> StringUtils.substringBefore(it, "#")).filter(StringUtils::isNotBlank).collect(Collectors.joining(StringUtils.SPACE));
-        } catch (Exception ignored) {
-            // Couldn't open config file. Yt-dlp will show the error
-        }
+        String configFile = readConfigFile(configLocation);
 
-        if (!configFile.contains("-f ") && !configFile.contains("--format ")) {
+        if (downloadable.hasVideoSection()) {
+            rejectConflictingSectionOptions(configFile);
+            // The chosen format and output file name must be applied to a fragment even if the config overrides them
             commandBuilder.formatId(downloadable.getFormatId());
-        }
-
-        if (!configFile.contains("-o ") && !configFile.contains("--output ")) {
             YoutubeDlCommandHelper.setOutputPath(commandBuilder, downloadable);
+            YoutubeDlCommandHelper.setVideoSectionOptions(commandBuilder, downloadable);
+        } else {
+            if (!configFile.contains("-f ") && !configFile.contains("--format ")) {
+                commandBuilder.formatId(downloadable.getFormatId());
+            }
+
+            if (!configFile.contains("-o ") && !configFile.contains("--output ")) {
+                YoutubeDlCommandHelper.setOutputPath(commandBuilder, downloadable);
+            }
         }
 
         return commandBuilder
                 .ffmpegLocation(ctx.getAppBinariesDir().toString())
                 .urls(List.of(downloadable.getBaseUrl()))
                 .buildAsList();
+    }
+
+    private String readConfigFile(String configLocation) {
+        try (Stream<String> lines = Files.lines(Path.of(configLocation))) {
+            return lines
+                    .map(it -> StringUtils.substringBefore(it, "#"))
+                    .filter(StringUtils::isNotBlank)
+                    .collect(Collectors.joining(StringUtils.SPACE));
+        } catch (Exception ignored) {
+            // Couldn't open config file. Yt-dlp will show the error
+            return StringUtils.EMPTY;
+        }
+    }
+
+    private void rejectConflictingSectionOptions(String configFile) {
+        SECTION_CONFLICTING_OPTIONS.stream()
+                .filter(configFile::contains)
+                .findFirst()
+                .ifPresent(option -> {
+                    throw new VideoSectionUnsupportedException("Config file contains option " + option + " which is incompatible with fragment downloading");
+                });
     }
 
     @Override

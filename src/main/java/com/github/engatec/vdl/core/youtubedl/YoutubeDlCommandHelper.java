@@ -7,6 +7,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import com.github.engatec.vdl.core.ApplicationContext;
+import com.github.engatec.vdl.model.VideoSection;
 import com.github.engatec.vdl.model.downloadable.Downloadable;
 import com.github.engatec.vdl.preference.ConfigRegistry;
 import com.github.engatec.vdl.preference.configitem.youtubedl.RateLimitConfigItem;
@@ -37,6 +38,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import static com.github.engatec.vdl.util.YouDlUtils.updateOutputTemplateWithDownloadId;
+import static com.github.engatec.vdl.util.YouDlUtils.updateOutputTemplateWithVideoSection;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.apache.commons.lang3.StringUtils.strip;
 
@@ -49,7 +51,19 @@ public class YoutubeDlCommandHelper {
     public static void setOutputPath(YoutubeDlCommandBuilder commandBuilder, Downloadable downloadable) {
         String outputTemplate = configRegistry.get(OutputTemplateConfigProperty.class).getValue();
         String prefixedTemplate = updateOutputTemplateWithDownloadId(outputTemplate, downloadable);
-        commandBuilder.outputPath(downloadable.getDownloadPath().resolve(prefixedTemplate).toString());
+        String sectionTemplate = updateOutputTemplateWithVideoSection(prefixedTemplate, downloadable);
+        commandBuilder.outputPath(downloadable.getDownloadPath().resolve(sectionTemplate).toString());
+    }
+
+    public static void setVideoSectionOptions(YoutubeDlCommandBuilder commandBuilder, Downloadable downloadable) {
+        if (!downloadable.hasVideoSection()) {
+            return;
+        }
+
+        VideoSection section = downloadable.getVideoSection();
+        commandBuilder
+                .downloadSections(section.toYtDlpRange())
+                .noForceKeyframesAtCuts();
     }
 
     public static void setGeneralOptions(YoutubeDlCommandBuilder commandBuilder) {

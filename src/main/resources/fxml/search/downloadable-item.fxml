@@ -5,6 +5,7 @@
 <?import javafx.scene.control.CheckBox?>
 <?import javafx.scene.control.ComboBox?>
 <?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TextField?>
 <?import javafx.scene.image.Image?>
 <?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.HBox?>
@@ -37,6 +38,22 @@
                   <Button fx:id="subtitlesButton" mnemonicParsing="false" />
                </children>
             </HBox>
+            <VBox fx:id="sectionPane" spacing="2.0">
+               <children>
+                  <HBox alignment="CENTER_LEFT" spacing="6.0">
+                     <children>
+                        <CheckBox fx:id="sectionCheckBox" mnemonicParsing="false" text="%download.section" />
+                        <Label styleClass="caption" text="%download.section.start" />
+                        <TextField fx:id="sectionStartTextField" prefColumnCount="6" promptText="00:00" />
+                        <Label styleClass="caption" text="%download.section.end" />
+                        <TextField fx:id="sectionEndTextField" prefColumnCount="6" promptText="00:00" />
+                        <Label fx:id="sectionDurationLabel" styleClass="caption" />
+                     </children>
+                  </HBox>
+                  <Label fx:id="sectionHintLabel" styleClass="caption" text="%download.section.hint" wrapText="true" />
+                  <Label fx:id="sectionErrorLabel" managed="false" styleClass="error-label" visible="false" wrapText="true" />
+               </children>
+            </VBox>
          </children>
       </VBox>
    </children>

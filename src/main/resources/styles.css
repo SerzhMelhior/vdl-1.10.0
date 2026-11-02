@@ -79,6 +79,10 @@
     -fx-opacity: 0.9;
 }
 
+.error-label {
+    -fx-text-fill: #b00020;
+}
+
 .service-btn {
     -fx-opacity: 0.6;
 }

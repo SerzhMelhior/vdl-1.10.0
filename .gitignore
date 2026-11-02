@@ -5,3 +5,8 @@ doc/
 /*.exe
 *.iml
 *.db
+
+/upd_windows.jar
+/vdl-video-downloader-*.zip
+/vdl-video-downloader-*.msi
+/packaging/bin/windows/ffmpeg.exe

@@ -8,6 +8,7 @@ import java.net.URL;
 import java.nio.file.Path;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
@@ -17,6 +18,7 @@ import com.github.engatec.vdl.core.ApplicationContext;
 import com.github.engatec.vdl.core.QueueManager;
 import com.github.engatec.vdl.core.youtubedl.YoutubeDlAttr;
 import com.github.engatec.vdl.exception.ServiceStubException;
+import com.github.engatec.vdl.exception.VideoSectionValidationException;
 import com.github.engatec.vdl.handler.ComboBoxMouseScrollHandler;
 import com.github.engatec.vdl.model.AudioFormat;
 import com.github.engatec.vdl.model.BitrateType;
@@ -24,6 +26,7 @@ import com.github.engatec.vdl.model.Format;
 import com.github.engatec.vdl.model.QueueItem;
 import com.github.engatec.vdl.model.Resolution;
 import com.github.engatec.vdl.model.VideoInfo;
+import com.github.engatec.vdl.model.VideoSection;
 import com.github.engatec.vdl.model.downloadable.BaseDownloadable;
 import com.github.engatec.vdl.model.downloadable.Downloadable;
 import com.github.engatec.vdl.model.postprocessing.ExtractAudioPostprocessing;
@@ -44,6 +47,7 @@ import com.github.engatec.vdl.ui.stage.core.FormatsStage;
 import com.github.engatec.vdl.ui.stage.core.SubtitlesStage;
 import com.github.engatec.vdl.util.AppUtils;
 import com.github.engatec.vdl.util.Thumbnails;
+import com.github.engatec.vdl.util.VideoSectionParser;
 import com.github.engatec.vdl.util.YouDlUtils;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -52,10 +56,12 @@ import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
+import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import org.apache.commons.collections4.CollectionUtils;
@@ -89,6 +95,13 @@ public class DownloadableItemComponentController extends HBox {
     @FXML private Button subtitlesButton;
     @FXML private CheckBox itemSelectedCheckBox;
 
+    @FXML private VBox sectionPane;
+    @FXML private CheckBox sectionCheckBox;
+    @FXML private TextField sectionStartTextField;
+    @FXML private TextField sectionEndTextField;
+    @FXML private Label sectionDurationLabel;
+    @FXML private Label sectionErrorLabel;
+
     @FXML private ImageView thumbnailImageView;
     @FXML private StackPane thumbnailWrapperPane;
 
@@ -105,6 +118,7 @@ public class DownloadableItemComponentController extends HBox {
         initAllAvailableFormatsButton();
         initAudioDownloadButton();
         initSubtitlesButton();
+        initVideoSectionControls();
 
         adjustUiControls();
     }
@@ -192,6 +206,25 @@ public class DownloadableItemComponentController extends HBox {
         int durationSeconds = Objects.requireNonNullElse(videoInfo.duration(), 0);
         String formattedDuration = durationSeconds <= 0 ? StringUtils.EMPTY : DurationFormatUtils.formatDuration(durationSeconds * 1000L, "HH:mm:ss");
         durationLabel.setText(formattedDuration);
+
+        if (durationSeconds > 0) {
+            sectionDurationLabel.setText(String.format(ctx.getLocalizedString("download.section.duration"), formattedDuration));
+        } else {
+            sectionDurationLabel.setVisible(false);
+            sectionDurationLabel.setManaged(false);
+        }
+    }
+
+    private void initVideoSectionControls() {
+        sectionStartTextField.disableProperty().bind(sectionCheckBox.selectedProperty().not());
+        sectionEndTextField.disableProperty().bind(sectionCheckBox.selectedProperty().not());
+        sectionCheckBox.selectedProperty().addListener((observable, oldValue, selected) -> {
+            if (!selected) {
+                clearSectionError();
+            }
+        });
+        // Clicks inside the fragment controls must not toggle the item selection
+        sectionPane.setOnMouseClicked(event -> event.consume());
     }
 
     private void initFormatsDropdown() {
@@ -309,7 +342,11 @@ public class DownloadableItemComponentController extends HBox {
         audioButton.setGraphic(new ImageView(Icon.AUDIOTRACK_SMALL.getImage()));
         audioButton.setTooltip(Tooltips.create("download.audio"));
         audioButton.setOnAction(e -> {
-            AppUtils.resolveDownloadPath(stage).ifPresent(this::downloadAudio);
+            if (sectionCheckBox.isSelected()) {
+                Dialogs.error("download.section.audio.unsupported");
+            } else {
+                AppUtils.resolveDownloadPath(stage).ifPresent(this::downloadAudio);
+            }
             e.consume();
         });
     }
@@ -382,11 +419,62 @@ public class DownloadableItemComponentController extends HBox {
         return itemSelectedCheckBox;
     }
 
+    /**
+     * Parses and validates the fragment time range, updating the inline error message.
+     *
+     * @return a localized error message or null if the section is valid (or disabled)
+     */
+    public String validateSection() {
+        if (!sectionCheckBox.isSelected()) {
+            clearSectionError();
+            return null;
+        }
+
+        try {
+            parseVideoSection();
+            clearSectionError();
+            return null;
+        } catch (VideoSectionValidationException e) {
+            String message = getSectionErrorMessage(e.getReason());
+            showSectionError(message);
+            return message;
+        }
+    }
+
+    public boolean isSectionSelected() {
+        return sectionCheckBox.isSelected();
+    }
+
+    private VideoSection parseVideoSection() {
+        return VideoSectionParser.parse(sectionStartTextField.getText(), sectionEndTextField.getText(), videoInfo.duration());
+    }
+
+    private String getSectionErrorMessage(VideoSectionValidationException.Reason reason) {
+        String key = "download.section.invalid." + reason.name().toLowerCase(Locale.ROOT);
+        return ctx.getLocalizedString(key);
+    }
+
+    private void showSectionError(String message) {
+        sectionErrorLabel.setText(message);
+        sectionErrorLabel.setVisible(true);
+        sectionErrorLabel.setManaged(true);
+    }
+
+    private void clearSectionError() {
+        sectionErrorLabel.setText(StringUtils.EMPTY);
+        sectionErrorLabel.setVisible(false);
+        sectionErrorLabel.setManaged(false);
+    }
+
     public Downloadable getDownloadable() {
+        VideoSection section = sectionCheckBox.isSelected() ? parseVideoSection() : VideoSection.NONE;
+
         BaseDownloadable downloadable = new BaseDownloadable();
         downloadable.setFormatId(formatsComboBox.getSelectionModel().getSelectedItem().value());
         downloadable.setTitle(titleLabel.getText());
         downloadable.setBaseUrl(videoInfo.baseUrl());
+        downloadable.setSectionStartSeconds(section.startSeconds());
+        downloadable.setSectionEndSeconds(section.endSeconds());
         return downloadable;
     }
 
