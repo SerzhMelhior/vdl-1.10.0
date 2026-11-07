@@ -11,12 +11,18 @@ import javafx.concurrent.Task;
 
 public class YtDlpNewVersionCheckService extends Service<Optional<ReleaseDto>> {
 
+    // The bundled yt-dlp is the Windows 7 compatible build from nicolaasjan/yt-dlp.
+    // Its self-updater is pinned to the same fork, so the version check must use
+    // that release channel instead of the official one (which requires Windows 10+).
+    private static final String YT_DLP_OWNER = "nicolaasjan";
+    private static final String YT_DLP_REPOSITORY = "yt-dlp";
+
     @Override
     protected Task<Optional<ReleaseDto>> createTask() {
         return new Task<>() {
             @Override
             protected Optional<ReleaseDto> call() {
-                ReleaseDto releaseInfo = GithubUtils.getLatestReleaseInfo("yt-dlp", "yt-dlp");
+                ReleaseDto releaseInfo = GithubUtils.getLatestReleaseInfo(YT_DLP_OWNER, YT_DLP_REPOSITORY);
                 String latestVersion = releaseInfo.tagName();
                 String currentVersion = YoutubeDlManager.INSTANCE.getCurrentVersion(Engine.YT_DLP);
                 return new NewVersionPredicate().test(latestVersion, currentVersion) ? Optional.of(releaseInfo) : Optional.empty();

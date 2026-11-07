@@ -6,7 +6,7 @@ on:
       version:
         description: 'App version'
         required: true
-        default: '1.10.0'
+        default: '1.10.1'
 
 jobs:
   build:
@@ -39,8 +39,21 @@ jobs:
           }
           Copy-Item $ffmpeg.FullName 'packaging/bin/windows/ffmpeg.exe' -Force
           & 'packaging/bin/windows/ffmpeg.exe' -version
-      - name: Update yt-dlp
-        run: packaging/bin/windows/yt-dlp.exe -U
+      - name: Download yt-dlp (Windows 7 compatible)
+        shell: pwsh
+        run: |
+          $url = 'https://github.com/nicolaasjan/yt-dlp/releases/download/2026.10.29.091737/yt-dlp_win7.exe'
+          $target = 'packaging/bin/windows/yt-dlp.exe'
+          curl.exe -L --fail --retry 3 -o $target $url
+          if ($LASTEXITCODE -ne 0) { throw 'Failed to download yt-dlp' }
+          $actualHash = (Get-FileHash $target -Algorithm SHA256).Hash
+          if ($actualHash -ne 'A8B176DA9176A8C44A38A5653E0BDD36B1892B618EFB53DBDD869BBF3A84B6AE') {
+            throw "Unexpected yt-dlp.exe SHA-256: $actualHash"
+          }
+          $version = & $target --version
+          if ($LASTEXITCODE -ne 0 -or $version -ne '2026.10.29.091737') {
+            throw "Unexpected yt-dlp version: $version"
+          }
       - name: Install fx-controls into local Maven repository
         run: mvn install:install-file -Dfile='./lib/fx-controls-1.0.jar' -DgroupId='com.github.engatec' -DartifactId='fx-controls' -Dversion='1.0' -Dpackaging='jar' -DgeneratePom='true'
       - name: Build with Maven
